@@ -36,11 +36,10 @@ jobs:
           host: ${{ secrets.EC2_HOSTNAME }}
           username: ${{ secrets.USERNAME }}
           port: 22
-          key: ${{ secrets.SSH_PRIVATE_KEY_PATH }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             # Salin file biner aplikasi ke direktori home pengguna di EC2
             scp ci-cd-go ${USERNAME}@${EC2_HOSTNAME}:~/
-
             # Jalankan aplikasi di direktori home pengguna
             ssh ${USERNAME}@${EC2_HOSTNAME} "chmod +x ~/ci-cd-go"
             ssh ${USERNAME}@${EC2_HOSTNAME} "~/ci-cd-go &"
