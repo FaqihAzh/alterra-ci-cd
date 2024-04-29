@@ -1,0 +1,40 @@
+name: CI/CD with AWS EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Setup Go environment
+        uses: actions/setup-go@v2
+        with:
+          go-version: "1.20"
+
+      - name: Build application
+        run: |
+          go build -o ci-cd-go main.go
+
+      - name: Test application
+        run: |
+          go test ./...
+
+      - name: Prepare application package
+        run: |
+          zip -r ci-cd-go.zip ci-cd-go
+
+      - name: Deploy to EC2 using SSH
+        run: |
+          scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ci-cd-go.zip ec2-user@${{ secrets.EC2_HOSTNAME }}:/home/ec2-user/
+          ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ec2-user@${{ secrets.EC2_HOSTNAME }} << EOF
+          unzip ci-cd-go.zip
+          pkill ci-cd-go
+          nohup ./ci-cd-go & 
+          EOF
