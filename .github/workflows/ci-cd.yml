@@ -19,7 +19,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
-          go-version: "1.20" # Versi Go yang digunakan
+          go-version: "1.20"
 
       - name: Install dependencies
         run: go mod tidy
@@ -39,7 +39,6 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             # Salin file biner aplikasi ke direktori home pengguna di EC2
-            scp ci-cd-go ${USERNAME}@${EC2_HOSTNAME}:~/
+            scp ci-cd-go ${{ secrets.USERNAME }}@${{ secrets.EC2_HOSTNAME }}:~/
             # Jalankan aplikasi di direktori home pengguna
-            ssh ${USERNAME}@${EC2_HOSTNAME} "chmod +x ~/ci-cd-go"
-            ssh ${USERNAME}@${EC2_HOSTNAME} "~/ci-cd-go &"
+            ssh ${{ secrets.USERNAME }}@${{ secrets.EC2_HOSTNAME }} "chmod +x ~/ci-cd-go && ~/ci-cd-go &"
