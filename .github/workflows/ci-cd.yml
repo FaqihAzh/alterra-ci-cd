@@ -1,68 +1,29 @@
-name: CI/CD Pipeline
+name: Deploy to AWS EC2
 
 on:
   push:
     branches: [main]
 
 jobs:
-  # Job untuk build aplikasi Go
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Go environment
-        uses: actions/setup-go@v4
-        with:
-          go-version: "1.20"
-          cache: true # Aktifkan cache untuk mempercepat build
-
-      - name: Restore Dependencies
-        run: go mod download
-
-      - name: Build application
-        run: go build -o ci-cd-go main.go
-
-  # Job untuk menguji aplikasi Go
-  test:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Go environment
-        uses: actions/setup-go@v4
-        with:
-          go-version: "1.20"
-
-      - name: Run tests
-        run: go test ./...
-
-  # Job untuk mendistribusikan aplikasi ke EC2 menggunakan SSH
   deploy:
     runs-on: ubuntu-latest
-    needs: test
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - name: Deploy application to EC2
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: "1.19"
+
+      - name: Build the Go application
+        run: go build -o app main.go
+
+      - name: Deploy to AWS EC2
         run: |
-          # Simpan kunci SSH sebagai file
-          echo "${{ secrets.SSH_PRIVATE_KEY_PATH }}" > deploy_key.pem
-          chmod 600 deploy_key.pem # Set izin untuk file kunci SSH
+          # Salin file aplikasi ke server EC2
+          scp -o StrictHostKeyChecking=no -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} app ${{ secrets.USERNAME }}@${{ secrets.EC2_HOSTNAME }}:/path/to/remote/dir/
 
-          # Kirim file aplikasi ke EC2
-          scp -i deploy_key.pem ci-cd-go ec2-user@${{ secrets.EC2_HOSTNAME }}:/home/ec2-user/ci-cd-go
-
-          # Jalankan aplikasi di EC2 menggunakan SSH
-          ssh -i deploy_key.pem ec2-user@${{ secrets.EC2_HOSTNAME }} << EOF
-          chmod +x /home/ec2-user/ci-cd-go
-          pkill ci-cd-go # Hentikan proses lama, jika ada
-          nohup /home/ec2-user/ci-cd-go & # Jalankan aplikasi sebagai proses latar belakang
-          EOF
-
-          # Hapus file kunci SSH
-          rm deploy_key.pem
+          # Jalankan aplikasi di server EC2
+          ssh -o StrictHostKeyChecking=no -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.USERNAME }}@${{ secrets.EC2_HOSTNAME }} 'nohup /path/to/remote/dir/app &'
