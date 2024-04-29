@@ -9,7 +9,7 @@ on:
       - main
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -19,25 +19,28 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
-          go-version: "1.21"
-
-      - name: Cache Go modules
-        uses: actions/cache@v2
-        with:
-          path: ~/.cache/go-build
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.mod') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
+          go-version: "1.20" # Versi Go yang digunakan
 
       - name: Install dependencies
         run: go mod tidy
 
-      # - name: Run tests
-      #   run: go test ./...
+      - name: Run tests
+        run: go test ./...
 
       - name: Build application
         run: go build -o ci-cd-go main.go
 
-      - name: Deploy (optional)
+      - name: Deploy to AWS EC2
+        uses: appleboy/ssh-action@v0.1.2
+        with:
+          host: ${{ secrets.EC2_HOSTNAME }}
+          username: ${{ secrets.USERNAME }}
+          port: 22
+          key: ${{ secrets.SSH_PRIVATE_KEY_PATH }}
+          script: |
+            # Salin file biner aplikasi ke direktori home pengguna di EC2
+            scp ci-cd-go ${USERNAME}@${EC2_HOSTNAME}:~/
 
-        run: echo "Deploying application..."
+            # Jalankan aplikasi di direktori home pengguna
+            ssh ${USERNAME}@${EC2_HOSTNAME} "chmod +x ~/ci-cd-go"
+            ssh ${USERNAME}@${EC2_HOSTNAME} "~/ci-cd-go &"
