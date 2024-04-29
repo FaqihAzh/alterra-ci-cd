@@ -10,10 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4 # Perbarui versi tindakan
 
       - name: Setup Go environment
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4 # Perbarui versi tindakan
         with:
           go-version: "1.20"
 
@@ -26,10 +26,10 @@ jobs:
     needs: build
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4 # Perbarui versi tindakan
 
       - name: Setup Go environment
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4 # Perbarui versi tindakan
         with:
           go-version: "1.20"
 
@@ -42,13 +42,13 @@ jobs:
     needs: test
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4 # Perbarui versi tindakan
 
       - name: Deploy application to EC2
         run: |
           # Simpan kunci SSH sebagai file
           echo "${{ secrets.SSH_PRIVATE_KEY_PATH }}" > deploy_key.pem
-          chmod 600 deploy_key.pem  # Set izin untuk file kunci SSH
+          chmod 600 deploy_key.pem # Set izin untuk file kunci SSH
 
           # Kirim file aplikasi ke EC2
           scp -i deploy_key.pem ci-cd-go ec2-user@${{ secrets.EC2_HOSTNAME }}:/home/ec2-user/ci-cd-go
@@ -56,8 +56,8 @@ jobs:
           # Jalankan aplikasi di EC2 menggunakan SSH
           ssh -i deploy_key.pem ec2-user@${{ secrets.EC2_HOSTNAME }} << EOF
           chmod +x /home/ec2-user/ci-cd-go
-          pkill ci-cd-go  # Hentikan proses lama, jika ada
-          nohup /home/ec2-user/ci-cd-go &  # Jalankan aplikasi sebagai proses latar belakang
+          pkill ci-cd-go # Hentikan proses lama, jika ada
+          nohup /home/ec2-user/ci-cd-go & # Jalankan aplikasi sebagai proses latar belakang
           EOF
 
           # Hapus file kunci SSH
